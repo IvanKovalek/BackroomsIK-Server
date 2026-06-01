@@ -6,17 +6,17 @@ using LiteNetLib.Utils;
 
 namespace BackroomsIK_Server
 {
-    // 1. Estructuras de datos para guardar el estado del mundo
     public class Player
     {
         public int Id { get; set; }
-        public string Name { get; set; }
+        // Solución al Warning: Le asignamos un texto vacío por defecto
+        public string Name { get; set; } = string.Empty; 
         public float X { get; set; }
         public float Y { get; set; }
         public float Z { get; set; }
         public float RotationY { get; set; }
         public int Health { get; set; }
-        public int State { get; set; } // 0=Quieto, 1=Caminando, 2=Corriendo, etc.
+        public int State { get; set; } 
     }
 
     public class Monster
@@ -27,18 +27,16 @@ namespace BackroomsIK_Server
         public float Z { get; set; }
         public float RotationY { get; set; }
         public int Health { get; set; }
-        public int State { get; set; } // 0=Patrullando, 1=Persiguiendo, 2=Atacando
+        public int State { get; set; } 
     }
 
     class Program
     {
-        // Diccionarios para mantener en memoria a los jugadores y monstruos activos
         static Dictionary<int, Player> players = new Dictionary<int, Player>();
         static Dictionary<int, Monster> monsters = new Dictionary<int, Monster>();
 
         static void Main(string[] args)
         {
-            // Creamos un par de monstruos de prueba (El servidor tiene el control de ellos)
             monsters.Add(1, new Monster { Id = 1, X = 10f, Y = 0f, Z = 10f, RotationY = 0f, Health = 100, State = 0 });
             monsters.Add(2, new Monster { Id = 2, X = -5f, Y = 0f, Z = 20f, RotationY = 180f, Health = 100, State = 0 });
 
@@ -56,23 +54,20 @@ namespace BackroomsIK_Server
             listener.PeerConnectedEvent += peer =>
             {
                 Console.WriteLine($"[Servidor] Jugador conectado: {peer.Id}");
-                // Registramos al jugador nuevo en el mundo con datos por defecto
                 players.Add(peer.Id, new Player { Id = peer.Id, Name = "Jugador_" + peer.Id, Health = 100, State = 0 });
             };
 
             listener.PeerDisconnectedEvent += (peer, disconnectInfo) =>
             {
                 Console.WriteLine($"[Servidor] Jugador desconectado: {peer.Id}");
-                // Lo borramos del mundo
                 players.Remove(peer.Id);
             };
 
-            // Cuando recibimos paquetes desde Unity (El cliente manda su input/posición)
-            listener.NetworkReceiveEvent += (fromPeer, dataReader, deliveryMethod) =>
+            // Solución al Error CS1593: Agregamos el parámetro 'channel' (el tercer parámetro de la lista)
+            listener.NetworkReceiveEvent += (fromPeer, dataReader, channel, deliveryMethod) =>
             {
-                byte packetType = dataReader.GetByte(); // Leemos el primer byte para saber qué acción es
+                byte packetType = dataReader.GetByte(); 
 
-                // Tipo 1: El cliente nos manda su nueva posición
                 if(packetType == 1 && players.ContainsKey(fromPeer.Id))
                 {
                     players[fromPeer.Id].X = dataReader.GetFloat();
@@ -90,28 +85,23 @@ namespace BackroomsIK_Server
 
             NetDataWriter writer = new NetDataWriter();
 
-            // Bucle principal del servidor (Tickrate)
             while (true)
             {
                 server.PollEvents();
 
-                // --- 1. LÓGICA DE MONSTRUOS (IA DE SERVIDOR) ---
                 foreach (var monster in monsters.Values)
                 {
-                    if (monster.State == 0) // Si están patrullando
+                    if (monster.State == 0) 
                     {
-                        // Ejemplo: movemos al monstruo lentamente en el eje Z
                         monster.Z += 0.02f; 
                     }
                 }
 
-                // --- 2. BROADCAST (Transmitir el mundo a los jugadores) ---
                 if (server.ConnectedPeersCount > 0)
                 {
                     writer.Reset();
-                    writer.Put((byte)2); // Tipo 2: Paquete de actualización global del mundo
+                    writer.Put((byte)2); 
 
-                    // Escribimos a los jugadores
                     writer.Put(players.Count);
                     foreach (var p in players.Values)
                     {
@@ -124,7 +114,6 @@ namespace BackroomsIK_Server
                         writer.Put(p.State);
                     }
 
-                    // Escribimos a los monstruos
                     writer.Put(monsters.Count);
                     foreach (var m in monsters.Values)
                     {
@@ -137,11 +126,10 @@ namespace BackroomsIK_Server
                         writer.Put(m.State);
                     }
 
-                    // Enviamos el paquete gigante a todos (Usamos Unreliable para posiciones por su velocidad)
                     server.SendToAll(writer, DeliveryMethod.Unreliable);
                 }
 
-                Thread.Sleep(15); // ~60 Ticks por segundo (optimizado para CPU)
+                Thread.Sleep(15); 
             }
         }
     }
