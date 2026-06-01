@@ -6,7 +6,7 @@ namespace BackroomsIK_Server
     {
         static void Main(string[] args)
         {
-            Console.WriteLine("Servidor de BackroomsIK iniciado..");
+            Console.WriteLine("Servidor de BackroomsIK iniciado...");
             Console.WriteLine("Esperando conexiones...");
 
             // Bucle infinito para que el servidor de Ubuntu no se apague
