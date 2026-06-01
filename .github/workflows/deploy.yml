@@ -1,0 +1,42 @@
+name: Deploy BackroomsIK Server to EC2
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Descargar codigo
+      uses: actions/checkout@v4
+
+    - name: Configurar .NET Core
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '8.0.x'
+
+    - name: Compilar el Servidor
+      run: dotnet publish ./BackroomsIK_Server.csproj -c Release -o ./publish_output
+
+    - name: Subir archivos a EC2
+      uses: appleboy/scp-action@v0.1.7
+      with:
+        host: ${{ secrets.EC2_HOST }}
+        username: ${{ secrets.EC2_USERNAME }}
+        key: ${{ secrets.EC2_SSH_KEY }}
+        source: "./publish_output/*"
+        target: "/home/ubuntu/game-server"
+        strip_components: 1
+
+    - name: Reiniciar el servicio en EC2
+      uses: appleboy/ssh-action@v1.0.3
+      with:
+        host: ${{ secrets.EC2_HOST }}
+        username: ${{ secrets.EC2_USERNAME }}
+        key: ${{ secrets.EC2_SSH_KEY }}
+        script: |
+          sudo systemctl restart gameserver
+          sudo systemctl status gameserver --no-pager
