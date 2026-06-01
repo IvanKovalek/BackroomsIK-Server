@@ -38,5 +38,5 @@ jobs:
         username: ${{ secrets.EC2_USERNAME }}
         key: ${{ secrets.EC2_SSH_KEY }}
         script: |
-          sudo systemctl restart gameserver
-          sudo systemctl status gameserver --no-pager
+          sudo systemctl restart backroomsik
+          sudo systemctl status backroomsik --no-pager
