@@ -38,5 +38,9 @@ jobs:
         username: ${{ secrets.EC2_USERNAME }}
         key: ${{ secrets.EC2_SSH_KEY }}
         script: |
+          echo "--- DONDE ESTA DOTNET ---"
+          which dotnet || echo "No se encontro dotnet"
+          echo "--- QUE ARCHIVOS HAY EN LA CARPETA ---"
+          ls -la /home/ubuntu/game-server || echo "La carpeta no existe"
           sudo systemctl restart backroomsik
           sudo systemctl status backroomsik --no-pager
